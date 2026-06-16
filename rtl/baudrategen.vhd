@@ -7,12 +7,13 @@ entity baud_rate_gen is
         CLK_FREQ : integer := 100000000
     );
     port (
-        clk  : in  std_logic;
-        reset  : in  std_logic;
+        clk : in  std_logic;
+        reset : in  std_logic;
         rx_enable : in  std_logic;
         tx_enable : in  std_logic;
-        baud_sel  : in  std_logic_vector(3 downto 0);
-        baud_tick : out std_logic
+        baud_sel : in  std_logic_vector(3 downto 0);
+        rx_tick : out std_logic;
+        tx_tick : out std_logic
     );
 end entity baud_rate_gen;
 
@@ -20,24 +21,26 @@ architecture behavioral of baud_rate_gen is
 
     constant OVERSAMPLE : integer := 16;
 
-    signal max_count : integer := CLK_FREQ / (9600 * OVERSAMPLE);
-    signal counter   : integer := 0;
     constant Divisor_9600 : integer := CLK_FREQ / (9600 * OVERSAMPLE);
     constant Divisor_19200 : integer := CLK_FREQ / (19200 * OVERSAMPLE);
     constant Divisor_38400 : integer := CLK_FREQ / (38400 * OVERSAMPLE);
     constant Divisor_57600 : integer := CLK_FREQ / (57600 * OVERSAMPLE);
     constant Divisor_115200 : integer := CLK_FREQ / (115200 * OVERSAMPLE);
     constant Divisor_230400 : integer := CLK_FREQ / (230400 * OVERSAMPLE);
-    constant Divisor_460800 : integer := CLK_FREQ / (460800 * OVERSAMPLE);
-    constant Divisor_921600 : integer := CLK_FREQ / (921600 * OVERSAMPLE);
+    constant Divisor_460800 : integer := CLK_FREQ / (460800  * OVERSAMPLE);
+    constant Divisor_921600 : integer := CLK_FREQ / (921600  * OVERSAMPLE);
     constant Divisor_1000000 : integer := CLK_FREQ / (1000000 * OVERSAMPLE);
     constant Divisor_1500000 : integer := CLK_FREQ / (1500000 * OVERSAMPLE);
     constant Divisor_2000000 : integer := CLK_FREQ / (2000000 * OVERSAMPLE);
     constant Divisor_2500000 : integer := CLK_FREQ / (2500000 * OVERSAMPLE);
-    constant Divisor_3000000 : integer := CLK_FREQ / (3000000* OVERSAMPLE);
+    constant Divisor_3000000 : integer := CLK_FREQ / (3000000 * OVERSAMPLE);
     constant Divisor_3500000 : integer := CLK_FREQ / (3500000 * OVERSAMPLE);
     constant Divisor_4000000 : integer := CLK_FREQ / (4000000 * OVERSAMPLE);
     constant Divisor_5000000 : integer := CLK_FREQ / (5000000 * OVERSAMPLE);
+
+    signal max_count  : integer := Divisor_9600;
+    signal rx_counter : integer := 0;
+    signal tx_counter : integer := 0;
 
 begin
 
@@ -60,24 +63,46 @@ begin
             when "1101" => max_count <= Divisor_3500000;
             when "1110" => max_count <= Divisor_4000000;
             when "1111" => max_count <= Divisor_5000000;
+            when others => max_count <= Divisor_9600;
         end case;
-            
     end process sel_proc;
 
-    tick : process(clk)
+    rx_gen : process(clk)
     begin
         if rising_edge(clk) then
             if reset = '1' then
-                counter   <= 0;
-                baud_tick <= '0';
-            elsif counter >= max_count - 1 then
-                counter   <= 0;
-                baud_tick <= '1';
+                rx_counter <= 0;
+                rx_tick    <= '0';
+            elsif rx_enable = '1' then
+                rx_counter <= 0;
+                rx_tick    <= '0';
+            elsif rx_counter >= max_count - 1 then
+                rx_counter <= 0;
+                rx_tick    <= '1';
             else
-                counter   <= counter + 1;
-                baud_tick <= '0';
+                rx_counter <= rx_counter + 1;
+                rx_tick    <= '0';
             end if;
         end if;
-    end process tick;
+    end process rx_gen;
+
+    tx_gen : process(clk)
+    begin
+        if rising_edge(clk) then
+            if reset = '1' then
+                tx_counter <= 0;
+                tx_tick    <= '0';
+            elsif tx_enable = '1' then
+                tx_counter <= 0;
+                tx_tick    <= '0';
+            elsif tx_counter >= max_count - 1 then
+                tx_counter <= 0;
+                tx_tick    <= '1';
+            else
+                tx_counter <= tx_counter + 1;
+                tx_tick    <= '0';
+            end if;
+        end if;
+    end process tx_gen;
 
 end architecture behavioral;
