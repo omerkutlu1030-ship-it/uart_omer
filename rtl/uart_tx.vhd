@@ -5,7 +5,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity uart_tx is
     port (
         clk : in  std_logic;
-        reset : in  std_logic;
+        rst_n : in  std_logic;
         tx_tick : in  std_logic;
         tx_dv : in  std_logic;
         tx_data : in  std_logic_vector(7 downto 0);
@@ -29,9 +29,9 @@ begin
 
     tx_done <= tx_done_int; 
 
-    process(clk, reset)
+    process(clk, rst_n)
     begin
-        if reset = '1' then
+        if rst_n = '0' then
             state <= IDLE;
             bit_index <= 0;
             tick_count <= 0;

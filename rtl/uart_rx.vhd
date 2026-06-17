@@ -4,7 +4,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity uart_rx is
     port (
         clk : in  std_logic;
-        reset : in  std_logic;
+        rst_n : in  std_logic;
         rx : in  std_logic;
         rx_tick : in  std_logic;
         rx_data  : out std_logic_vector(7 downto 0);
@@ -26,9 +26,9 @@ begin
 
     rx_valid <= rx_valid_int;
 
-    process(clk, reset)
+    process(clk, rst_n)
     begin
-        if reset = '1' then
+        if rst_n = '0' then
             state <= IDLE;
             bit_count <= 0;
             tick_count <= 0;

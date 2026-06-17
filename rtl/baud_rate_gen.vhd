@@ -1,6 +1,6 @@
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity baud_rate_gen is
     generic (
@@ -8,7 +8,7 @@ entity baud_rate_gen is
     );
     port (
         clk : in  std_logic;
-        reset : in  std_logic;
+        rst_n : in  std_logic;
         rx_enable : in  std_logic;
         tx_enable : in  std_logic;
         baud_sel : in  std_logic_vector(3 downto 0);
@@ -67,10 +67,10 @@ begin
         end case;
     end process sel_proc;
 
-    rx_gen : process(clk)
+    rx_gen : process(clk, rst_n)
     begin
         if rising_edge(clk) then
-            if reset = '1' then
+            if rst_n = '0' then
                 rx_counter <= 0;
                 rx_tick    <= '0';
             elsif rx_enable = '1' then
@@ -86,10 +86,10 @@ begin
         end if;
     end process rx_gen;
 
-    tx_gen : process(clk)
+    tx_gen : process(clk, rst_n)
     begin
         if rising_edge(clk) then
-            if reset = '1' then
+            if rst_n = '0' then
                 tx_counter <= 0;
                 tx_tick    <= '0';
             elsif tx_enable = '1' then
