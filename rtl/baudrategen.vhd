@@ -17,7 +17,7 @@ entity baud_rate_gen is
     );
 end entity baud_rate_gen;
 
-architecture behavioral of baud_rate_gen is
+architecture rtl of baud_rate_gen is
 
     constant OVERSAMPLE : integer := 16;
 
@@ -105,4 +105,4 @@ begin
         end if;
     end process tx_gen;
 
-end architecture behavioral;
+end architecture rtl;

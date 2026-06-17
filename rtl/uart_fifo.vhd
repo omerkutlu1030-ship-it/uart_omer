@@ -10,12 +10,11 @@ entity uart_fifo is
     port (
         clk     : in  std_logic;
         rst_n   : in  std_logic;
-
+        
         wr_en : in  std_logic;
         wr_data : in  std_logic_vector(WIDTH-1 downto 0);
         full : out std_logic;
 
-        -- read port (first-word fall-through)
         rd_en : in  std_logic;
         rd_data : out std_logic_vector(WIDTH-1 downto 0);
         empty : out std_logic
@@ -40,10 +39,8 @@ begin
 
     full_int <= '1' when level = DEPTH else '0';
     empty_int <= '1' when level = 0 else '0';
-
     do_wr <= wr_en and not full_int;
     do_rd <= rd_en and not empty_int;
-
     full <= full_int;
     empty <= empty_int;
     rd_data <= mem(rd_ptr);
@@ -57,7 +54,7 @@ begin
                 level  <= 0;
 
             else
-                -- Write
+
                 if do_wr = '1' then
                     mem(wr_ptr) <= wr_data;
                     if wr_ptr = DEPTH - 1 then
@@ -76,7 +73,6 @@ begin
                     end if;
                 end if;
 
-                -- Level update handles all four cases of {do_wr, do_rd}
                 if do_wr = '1' and do_rd = '1' then
                     level <= level;
                 elsif do_wr = '1' then

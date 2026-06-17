@@ -94,8 +94,8 @@ begin
                         end if;
                     end if;
 
-            end case;
-        end if;
-    end process;
+            end case;   
+        end if;   
+    end process;   
 
-end architecture behavioral;
+end architecture behavioral;   
