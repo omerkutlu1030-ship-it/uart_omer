@@ -61,6 +61,7 @@ begin
 
                 when START_BIT =>
                     tx_active <= '1';
+                    tx_enable  <= '1';
                     tx_serial <= '0';
                     if tx_tick = '1' then
                         if tick_count = 15 then
@@ -73,6 +74,7 @@ begin
 
                 when DATA_BITS =>
                     tx_active <= '1';
+                    tx_enable  <= '1';
                     tx_serial <= shift_reg(bit_index);
                     if tx_tick = '1' then
                         if tick_count = 15 then
@@ -89,6 +91,7 @@ begin
 
                 when STOP_BIT =>
                     tx_active <= '1';
+                    tx_enable  <= '1'; 
                     tx_serial <= '1';
                     if tx_tick = '1' then
                         if tick_count = 15 then

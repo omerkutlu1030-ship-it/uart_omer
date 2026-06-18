@@ -2,6 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work; 
+use work.uart_pkg.all;
+
 entity baud_rate_gen is
     generic (
         CLK_FREQ : integer := 100000000
@@ -19,24 +22,23 @@ end entity baud_rate_gen;
 
 architecture rtl of baud_rate_gen is
 
-    constant OVERSAMPLE : integer := 16;
 
-    constant Divisor_9600 : integer := CLK_FREQ / (9600 * OVERSAMPLE);
-    constant Divisor_19200 : integer := CLK_FREQ / (19200 * OVERSAMPLE);
-    constant Divisor_38400 : integer := CLK_FREQ / (38400 * OVERSAMPLE);
-    constant Divisor_57600 : integer := CLK_FREQ / (57600 * OVERSAMPLE);
-    constant Divisor_115200 : integer := CLK_FREQ / (115200 * OVERSAMPLE);
-    constant Divisor_230400 : integer := CLK_FREQ / (230400 * OVERSAMPLE);
-    constant Divisor_460800 : integer := CLK_FREQ / (460800  * OVERSAMPLE);
-    constant Divisor_921600 : integer := CLK_FREQ / (921600  * OVERSAMPLE);
-    constant Divisor_1000000 : integer := CLK_FREQ / (1000000 * OVERSAMPLE);
-    constant Divisor_1500000 : integer := CLK_FREQ / (1500000 * OVERSAMPLE);
-    constant Divisor_2000000 : integer := CLK_FREQ / (2000000 * OVERSAMPLE);
-    constant Divisor_2500000 : integer := CLK_FREQ / (2500000 * OVERSAMPLE);
-    constant Divisor_3000000 : integer := CLK_FREQ / (3000000 * OVERSAMPLE);
-    constant Divisor_3500000 : integer := CLK_FREQ / (3500000 * OVERSAMPLE);
-    constant Divisor_4000000 : integer := CLK_FREQ / (4000000 * OVERSAMPLE);
-    constant Divisor_5000000 : integer := CLK_FREQ / (5000000 * OVERSAMPLE);
+    constant Divisor_9600    : integer := divisior_calculator(CLK_FREQ,9600);
+    constant Divisor_19200   : integer := divisior_calculator(CLK_FREQ,19200);
+    constant Divisor_38400   : integer := divisior_calculator(CLK_FREQ,38400);
+    constant Divisor_57600   : integer := divisior_calculator(CLK_FREQ,57600);
+    constant Divisor_115200  : integer := divisior_calculator(CLK_FREQ,115200);
+    constant Divisor_230400  : integer := divisior_calculator(CLK_FREQ,230400);
+    constant Divisor_460800  : integer := divisior_calculator(CLK_FREQ,460800 );
+    constant Divisor_921600  : integer := divisior_calculator(CLK_FREQ,921600 );
+    constant Divisor_1000000 : integer := divisior_calculator(CLK_FREQ,1000000);
+    constant Divisor_1500000 : integer := divisior_calculator(CLK_FREQ,1500000);
+    constant Divisor_2000000 : integer := divisior_calculator(CLK_FREQ,2000000);
+    constant Divisor_2500000 : integer := divisior_calculator(CLK_FREQ,2500000);
+    constant Divisor_3000000 : integer := divisior_calculator(CLK_FREQ,3000000);
+    constant Divisor_3500000 : integer := divisior_calculator(CLK_FREQ,3500000);
+    constant Divisor_4000000 : integer := divisior_calculator(CLK_FREQ,4000000);
+    constant Divisor_5000000 : integer := divisior_calculator(CLK_FREQ,5000000);
 
     signal max_count  : integer := Divisor_9600;
     signal rx_counter : integer := 0;
@@ -73,7 +75,7 @@ begin
             if rst_n = '0' then
                 rx_counter <= 0;
                 rx_tick    <= '0';
-            elsif rx_enable = '1' then
+            elsif rx_enable = '0' then
                 rx_counter <= 0;
                 rx_tick    <= '0';
             elsif rx_counter >= max_count - 1 then
@@ -92,7 +94,7 @@ begin
             if rst_n = '0' then
                 tx_counter <= 0;
                 tx_tick    <= '0';
-            elsif tx_enable = '1' then
+            elsif tx_enable = '0' then
                 tx_counter <= 0;
                 tx_tick    <= '0';
             elsif tx_counter >= max_count - 1 then

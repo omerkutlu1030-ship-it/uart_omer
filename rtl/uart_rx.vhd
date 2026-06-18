@@ -50,7 +50,9 @@ begin
                     end if;
 
                 when START_BIT =>
+                    rx_enable <= '1'; 
                     if rx_tick = '1' then
+
                         if tick_count = 7 then
                             if rx = '0' then
                                 state <= DATA_BITS;
@@ -66,6 +68,7 @@ begin
                     end if;
 
                 when DATA_BITS =>
+                    rx_enable <= '1';
                     if rx_tick = '1' then
                         if tick_count = 15 then
                             tick_count           <= 0;
@@ -81,6 +84,7 @@ begin
                     end if;
 
                 when STOP_BIT =>
+                    rx_enable <= '1';
                     if rx_tick = '1' then
                         if tick_count = 15 then
                             if rx = '1' then
