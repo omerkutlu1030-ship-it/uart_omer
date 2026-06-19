@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
+use std.textio.all;
+
 
 entity tb_uart_top is
 end entity tb_uart_top;
@@ -15,15 +17,15 @@ architecture rtl of tb_uart_top is
   signal rst_n       : std_logic := '0';
   signal baud_sel    : std_logic_vector(3 downto 0) := (others => '0');
   signal rx          : std_logic := '1';
-  signal tx          : std_logic := '0';
+  signal tx          : std_logic := '1';
   signal tx_write    : std_logic := '0';
   signal tx_byte_in  : std_logic_vector(7 downto 0) := (others => '0');
-  signal tx_full     : std_logic := '0';
+  signal tx_full     : std_logic;
   signal rx_read     : std_logic := '0';
-  signal rx_byte_out : std_logic_vector(7 downto 0) := (others => '0');
-  signal rx_empty    : std_logic := '0';
-  signal tx_done     : std_logic := '0';
-  signal rx_valid    : std_logic := '0';
+  signal rx_byte_out : std_logic_vector(7 downto 0);
+  signal rx_empty    : std_logic;
+  signal tx_done     : std_logic;
+  signal rx_valid    : std_logic;
 
 begin
 
@@ -47,64 +49,94 @@ begin
       rx_valid    => rx_valid
     );
 
-
   rx <= tx;
-
 
   P_CLK_GEN : process
   begin
     clk <= '0';
-    wait for CLK_PERIOD / 2;
-    
-
+    wait for 100 ns;
     loop
       clk <= not clk;
       wait for CLK_PERIOD / 2;
     end loop;
   end process P_CLK_GEN;
 
-  P_RSTN_GEN : process
-  begin
-    rst_n <= '0';
-    wait for 10 * 100 ns;     -- 1 us
-    rst_n <= '1';
-    wait;
-  end process P_RSTN_GEN;
 
-  P_TX_RX_DATA_GEN : process
-    constant DATA : std_logic_vector(7 downto 0) := x"A5";
+
+  P_Measure : process
+    variable tx_count : integer := 2;
+    variable tx_start_time : time;
+    variable tx_end_time   : time;
   begin
-    wait until rst_n = '1';
+    if tx_count > 0 then
+      wait until rising_edge(tx);
+      report "TB: tx rising edge at " & time'image(now);
+      tx_start_time := now;
+      wait until falling_edge(tx);
+      report "TB: tx falling edge at " & time'image(now);
+      tx_end_time := now;
+      report "TB: measured difference = " & time'image(tx_end_time - tx_start_time);
+      tx_count := 0;
+    else
+      wait;
+    end if;
+  end process P_Measure;
+
+
+
+  P_STIM : process
+    constant DATA_BYTE : std_logic_vector(7 downto 0) := x"A5";
+  begin
+
+    tx_write <= '0';
+    rx_read  <= '0';
+    rst_n    <= '0';
+    wait for 1 us;
+    rst_n    <= '1';
+    wait until rising_edge(clk);
     wait until rising_edge(clk);
 
     baud_sel <= "1111";
-    wait for 5 * CLK_PERIOD;
 
-    report "TB: writing 0xA5 into TX FIFO";
-    tx_byte_in <= DATA;
-    tx_write   <= '1';
-    wait until rising_edge(clk);
-    tx_write   <= '0';
+    for i in 1 to 5 loop
+      wait until rising_edge(clk);
+    end loop;
+    
+    loop
 
 
-    wait until rx_valid = '1';
-    report "receiver reported rx_valid";
- 
-    wait until rising_edge(clk);
-    rx_read <= '1';
-    wait until rising_edge(clk);
-    rx_read <= '0';
+      report "TB: driving tx_write high at " & time'image(now);
+      tx_byte_in <= DATA_BYTE;
+      tx_write   <= '1';
+      wait until rising_edge(clk);
+      wait until rising_edge(clk);
+      tx_write   <= '0';
+      report "TB: tx_write released at " & time'image(now);
 
-    if rx_byte_out = DATA then
-      report "TB: PASS - received 0xA5" severity note;
-    else
-      report "TB: FAIL - received " & to_hstring(rx_byte_out) severity error;
-    end if;
+      wait until rx_valid = '1';
+      report "TB: receiver reported rx_valid at " & time'image(now);
 
-    wait for 2 us;
-    report "TB: end of test" severity note;
-    wait;
+      wait until rising_edge(clk);
+      if rx_byte_out = DATA_BYTE then
+        report "TB: PASS - received 0x" & to_hstring(rx_byte_out) severity note;
+      else
+        report "TB: FAIL - received 0x" & to_hstring(rx_byte_out)
+               severity error;
+      end if;
 
-  end process P_TX_RX_DATA_GEN;
+      rx_read <= '1';
+      wait until rising_edge(clk);
+      rx_read <= '0';
+
+      rst_n <= '0';
+      wait until rising_edge(clk);
+      wait until rising_edge(clk);
+      rst_n <= '1';
+
+      baud_sel <= "1111";
+      wait until rising_edge(clk);
+      wait until rising_edge(clk);
+    end loop;
+  end process P_STIM;
 
 end architecture;

@@ -170,7 +170,7 @@ simulate
 
 # Initial run length. The testbench has no end condition, so we run a
 # bounded amount of time. Bump this up when you start driving stimulus.
-run 50 us
+run 80 us
 
 # Zoom the waveform to fit the whole run
 wave zoom full

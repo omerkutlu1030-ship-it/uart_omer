@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.uart_pkg.all;
 entity uart_rx is
     port (
         clk : in  std_logic;
@@ -18,7 +19,7 @@ architecture behavioral of uart_rx is
     type current_state is (IDLE, START_BIT, DATA_BITS, STOP_BIT);
     signal state : current_state := IDLE;
     signal bit_count : integer range 0 to 7  := 0;
-    signal tick_count : integer range 0 to 15 := 0;
+    signal tick_count : integer range 0 to OVERSAMPLE - 1 := 0;
     signal shift_reg : std_logic_vector(7 downto 0) := (others => '0');
     signal rx_valid_int : std_logic := '0';
 
@@ -70,7 +71,7 @@ begin
                 when DATA_BITS =>
                     rx_enable <= '1';
                     if rx_tick = '1' then
-                        if tick_count = 15 then
+                        if tick_count = OVERSAMPLE - 1 then
                             tick_count           <= 0;
                             shift_reg(bit_count) <= rx;
                             if bit_count = 7 then
@@ -86,7 +87,7 @@ begin
                 when STOP_BIT =>
                     rx_enable <= '1';
                     if rx_tick = '1' then
-                        if tick_count = 15 then
+                        if tick_count = OVERSAMPLE - 1 then
                             if rx = '1' then
                                 rx_valid_int <= '1';
                                 rx_data      <= shift_reg;
