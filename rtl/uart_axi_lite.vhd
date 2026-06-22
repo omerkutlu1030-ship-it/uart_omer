@@ -38,31 +38,20 @@ entity uart_axi_lite is
     s_axi_rvalid  : out std_logic;
     s_axi_rready  : in  std_logic;
 
-    -- UART pins
-    rx : in  std_logic;
+    rx : in std_logic;
     tx : out std_logic
   );
 end entity uart_axi_lite;
 
 architecture rtl of uart_axi_lite is
 
-  -- ------------------------------------------------------------------
-  -- Register map (byte offsets)
-  -- ------------------------------------------------------------------
   constant ADDR_CTRL    : std_logic_vector(7 downto 0) := x"00";
   constant ADDR_STATUS  : std_logic_vector(7 downto 0) := x"04";
   constant ADDR_TX_DATA : std_logic_vector(7 downto 0) := x"08";
   constant ADDR_RX_DATA : std_logic_vector(7 downto 0) := x"0C";
 
-  -- ------------------------------------------------------------------
-  -- Internal register storage
-  -- ------------------------------------------------------------------
-  -- CTRL[3:0] = baud_sel
   signal reg_ctrl : std_logic_vector(31 downto 0) := (others => '0');
 
-  -- ------------------------------------------------------------------
-  -- Signals to/from the UART core
-  -- ------------------------------------------------------------------
   signal core_tx_write    : std_logic := '0';
   signal core_tx_byte_in  : std_logic_vector(7 downto 0) := (others => '0');
   signal core_tx_full     : std_logic;
@@ -72,9 +61,6 @@ architecture rtl of uart_axi_lite is
   signal core_tx_done     : std_logic;
   signal core_rx_valid    : std_logic;
 
-  -- ------------------------------------------------------------------
-  -- FSM state types
-  -- ------------------------------------------------------------------
   type write_state_t is (W_IDLE, W_RESP);
   signal w_state : write_state_t := W_IDLE;
 
@@ -106,13 +92,6 @@ begin
       rx_valid    => core_rx_valid
     );
 
-  -- ==================================================================
-  -- Write-channel FSM
-  --
-  -- W_IDLE: ready to accept; when awvalid & wvalid both asserted,
-  --         latch the write, decode the address, go to W_RESP.
-  -- W_RESP: hold bvalid until the master acknowledges with bready.
-  -- ==================================================================
 
   p_write : process(s_axi_aclk, s_axi_aresetn)
   begin
@@ -171,17 +150,6 @@ begin
     end if;
   end process p_write;
 
-  -- ==================================================================
-  -- Read-channel FSM
-  --
-  -- R_IDLE: ready to accept; when arvalid is asserted, decode the
-  --         address, load rdata, pulse rx_read if RX_DATA, go to R_RESP.
-  -- R_RESP: hold rvalid until the master acknowledges with rready.
-  --
-  -- STATUS register layout:
-  --   bit 0 = tx_full   (TX FIFO full  — do not write)
-  --   bit 1 = rx_empty  (RX FIFO empty — nothing to read)
-  -- ==================================================================
   p_read : process(s_axi_aclk, s_axi_aresetn)
   begin
     if s_axi_aresetn = '0' then
@@ -193,7 +161,6 @@ begin
       core_rx_read  <= '0';
 
     elsif rising_edge(s_axi_aclk) then
-      -- default: rx_read is a one-cycle pulse, clear it each cycle
       core_rx_read <= '0';
 
       case r_state is
@@ -220,7 +187,7 @@ begin
 
             else
               s_axi_rdata <= (others => '0');
-              s_axi_rresp <= "10"; -- SLVERR: undefined address
+              s_axi_rresp <= "10";
             end if;
 
             s_axi_rvalid <= '1';
