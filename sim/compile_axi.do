@@ -49,7 +49,7 @@ proc cmp {} {
 
 proc simulate {} {
     global WORK TB_TOP
-    vsim -voptargs=+acc -t ps -lib $WORK $WORK.$TB_TOP
+    vsim -voptargs=+acc -t ps -lib $WORK $uart_lib.$TB_TOP
     add_waves
 }
 

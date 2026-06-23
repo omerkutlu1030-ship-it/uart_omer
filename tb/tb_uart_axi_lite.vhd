@@ -34,7 +34,7 @@ architecture rtl of tb_uart_axi_lite is
 
 begin
 
-  dut : entity work.uart_axi_lite
+  dut : entity uart_lib.uart_axi_lite
     port map (
       s_axi_aclk    => aclk,
       s_axi_aresetn => aresetn,

@@ -29,7 +29,7 @@ architecture rtl of tb_uart_top is
 
 begin
 
-  uart_top_inst : entity work.uart_top
+  uart_top_inst : entity uart_lib.uart_top
     generic map (
       CLK_FREQ => CLK_FREQ
     )

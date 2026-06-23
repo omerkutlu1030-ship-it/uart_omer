@@ -1,2 +1,6 @@
 *.txt
 work/
+*.qdb
+*.qtl
+*.qpg
+uart_lib/

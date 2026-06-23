@@ -2,6 +2,10 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
+library uart_lib;
+use uart_lib.all;
+
+
 entity uart_top is
     generic (
         CLK_FREQ : integer := 100000000
@@ -70,7 +74,7 @@ begin
     tx_full <= tx_fifo_full;
     tx_done <= tx_done_int;
     rx_valid <= rx_valid_int;
-    u_baud_gen : entity work.baud_rate_gen
+    u_baud_gen : entity uart_lib.baud_rate_gen
         generic map (
             CLK_FREQ => CLK_FREQ
         )
@@ -84,7 +88,7 @@ begin
             tx_tick => tx_tick
         );
 
-    u_tx_fifo : entity work.uart_fifo
+    u_tx_fifo : entity uart_lib.uart_fifo
         generic map (
             WIDTH => 8,
             DEPTH => 16
@@ -100,7 +104,7 @@ begin
             empty => tx_fifo_empty
         );
 
-    u_tx : entity work.uart_tx
+    u_tx : entity uart_lib.uart_tx
         port map (
             clk => clk,
             rst_n => rst_n,
@@ -113,7 +117,7 @@ begin
             tx_done => tx_done_int
         );
 
-    u_rx : entity work.uart_rx
+    u_rx : entity uart_lib.uart_rx
         port map (
             clk => clk,
             rst_n => rst_n,
@@ -124,7 +128,7 @@ begin
             rx_enable => rx_enable
         );
 
-    u_rx_fifo : entity work.uart_fifo
+    u_rx_fifo : entity uart_lib.uart_fifo
         generic map (
             WIDTH => 8,
             DEPTH => 16

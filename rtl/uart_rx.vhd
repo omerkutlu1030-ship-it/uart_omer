@@ -1,7 +1,8 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-use work.uart_pkg.all;
+library uart_lib;
+use uart_lib.uart_pkg.all;
 entity uart_rx is
     port (
         clk : in  std_logic;

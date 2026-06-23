@@ -2,6 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library uart_lib;
+use uart_lib.all;
+
+
 entity uart_axi_lite is
   generic (
     CLK_FREQ : integer := 100000000
@@ -61,10 +65,16 @@ architecture rtl of uart_axi_lite is
   signal core_tx_done     : std_logic;
   signal core_rx_valid    : std_logic;
 
-  type write_state_t is (W_IDLE, W_RESP);
+  signal aw_done         : std_logic := '0';
+  signal w_done          : std_logic := '0';
+  signal latched_awaddr  : std_logic_vector(7 downto 0)  := (others => '0');
+  signal latched_wdata   : std_logic_vector(31 downto 0) := (others => '0');
+
+
+  type write_state_t is (W_IDLE, W_ADDR, W_DATA, W_RESP);
   signal w_state : write_state_t := W_IDLE;
 
-  type read_state_t is (R_IDLE, R_RESP);
+  type read_state_t is (R_IDLE, R_ADDR, R_DATA, R_RESP);
   signal r_state : read_state_t := R_IDLE;
 
 begin
@@ -72,7 +82,7 @@ begin
   -- ------------------------------------------------------------------
   -- UART core instantiation
   -- ------------------------------------------------------------------
-  u_uart_core : entity work.uart_top
+  u_uart_core : entity uart_lib.uart_top
     generic map (
       CLK_FREQ => CLK_FREQ
     )
@@ -93,62 +103,100 @@ begin
     );
 
 
-  p_write : process(s_axi_aclk, s_axi_aresetn)
+    p_write : process(s_axi_aclk, s_axi_aresetn)
+    variable v_awaddr : std_logic_vector(7  downto 0);
+    variable v_wdata  : std_logic_vector(31 downto 0);
   begin
     if s_axi_aresetn = '0' then
-      w_state        <= W_IDLE;
-      s_axi_awready  <= '0';
-      s_axi_wready   <= '0';
-      s_axi_bvalid   <= '0';
-      s_axi_bresp    <= "00";
-      reg_ctrl       <= (others => '0');
-      core_tx_write  <= '0';
+      w_state         <= W_IDLE;
+      aw_done         <= '0';
+      w_done          <= '0';
+      s_axi_awready   <= '0';
+      s_axi_wready    <= '0';
+      s_axi_bvalid    <= '0';
+      s_axi_bresp     <= "00";
+      reg_ctrl        <= (others => '0');
+      core_tx_write   <= '0';
       core_tx_byte_in <= (others => '0');
-
+      latched_awaddr  <= (others => '0');
+      latched_wdata   <= (others => '0');
+ 
     elsif rising_edge(s_axi_aclk) then
-      -- default: tx_write is a one-cycle pulse, clear it each cycle
+      -- default: tx_write is a one-cycle pulse
       core_tx_write <= '0';
-
+ 
       case w_state is
-
+ 
         when W_IDLE =>
-          s_axi_awready <= '1';
-          s_axi_wready  <= '1';
-          s_axi_bvalid  <= '0';
-
-          if s_axi_awvalid = '1' and s_axi_wvalid = '1' then
-            s_axi_awready <= '0';
-            s_axi_wready  <= '0';
-
-            -- address decode
-            if s_axi_awaddr = ADDR_CTRL then
-              reg_ctrl    <= s_axi_wdata;
+          -- AW handshake (independent)
+          if aw_done = '0' and s_axi_awvalid = '1' then
+            s_axi_awready <= '1';
+            if s_axi_awvalid = '1' then
+              aw_done        <= '1';
+              latched_awaddr <= s_axi_awaddr;
+              s_axi_awready  <= '0';
+            end if;
+          end if;
+ 
+          -- W handshake (independent)
+          if w_done = '0' and s_axi_wvalid = '1' then
+            s_axi_wready <= '1';
+            if s_axi_wvalid = '1' then
+              w_done        <= '1';
+              latched_wdata <= s_axi_wdata;
+              s_axi_wready  <= '0';
+            end if;
+          end if;
+ 
+          -- When both have been collected, do the write and respond.
+          -- Use the value being received this cycle if not yet latched.
+          if (aw_done = '1' or s_axi_awvalid = '1') and
+             (w_done  = '1' or s_axi_wvalid  = '1') then
+ 
+            if aw_done = '1' then
+              v_awaddr := latched_awaddr;
+            else
+              v_awaddr := s_axi_awaddr;
+            end if;
+ 
+            if w_done = '1' then
+              v_wdata := latched_wdata;
+            else
+              v_wdata := s_axi_wdata;
+            end if;
+ 
+            -- Address decode
+            if v_awaddr = ADDR_CTRL then
+              reg_ctrl    <= v_wdata;
               s_axi_bresp <= "00";
-            
-            elsif s_axi_awaddr = ADDR_TX_DATA then
-              core_tx_byte_in <= s_axi_wdata(7 downto 0);
+ 
+            elsif v_awaddr = ADDR_TX_DATA then
+              core_tx_byte_in <= v_wdata(7 downto 0);
               core_tx_write   <= '1';
               s_axi_bresp     <= "00";
+ 
             else
-              s_axi_bresp <= "10"; -- SLVERR: undefined address
+              s_axi_bresp <= "10";   -- SLVERR
             end if;
-
+ 
+            -- Clear handshake flags, issue response
+            aw_done      <= '0';
+            w_done       <= '0';
             s_axi_bvalid <= '1';
             w_state      <= W_RESP;
           end if;
-
+ 
         when W_RESP =>
           s_axi_bvalid <= '1';
           if s_axi_bready = '1' then
-            s_axi_bvalid  <= '0';
-            s_axi_awready <= '1';
-            s_axi_wready  <= '1';
-            w_state       <= W_IDLE;
+            s_axi_bvalid <= '0';
+            w_state      <= W_IDLE;
           end if;
-
+ 
       end case;
     end if;
   end process p_write;
+
 
   p_read : process(s_axi_aclk, s_axi_aresetn)
   begin
