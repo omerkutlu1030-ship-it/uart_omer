@@ -109,7 +109,6 @@ begin
       tx_byte_in <= DATA_BYTE;
       tx_write   <= '1';
       wait until rising_edge(clk);
-      wait until rising_edge(clk);
       tx_write   <= '0';
       report "TB: tx_write released at " & time'image(now);
 

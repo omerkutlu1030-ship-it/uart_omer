@@ -47,41 +47,39 @@ begin
 
     process(clk, rst_n)
     begin
-        if rising_edge(clk) then
-            if rst_n = '0' then
-                wr_ptr <= 0;
-                rd_ptr <= 0;
-                level  <= 0;
+        if rst_n = '0' then
+            wr_ptr <= 0;
+            rd_ptr <= 0;
+            level  <= 0;
 
-            else
+        elsif rising_edge(clk) then
 
-                if do_wr = '1' then
-                    mem(wr_ptr) <= wr_data;
-                    if wr_ptr = DEPTH - 1 then
-                        wr_ptr <= 0;
-                    else
-                        wr_ptr <= wr_ptr + 1;
-                    end if;
+            if do_wr = '1' then
+                mem(wr_ptr) <= wr_data;
+                if wr_ptr = DEPTH - 1 then
+                    wr_ptr <= 0;
+                else
+                    wr_ptr <= wr_ptr + 1;
                 end if;
-
-                -- Read pointer advance (data itself is combinational)
-                if do_rd = '1' then
-                    if rd_ptr = DEPTH - 1 then
-                        rd_ptr <= 0;
-                    else
-                        rd_ptr <= rd_ptr + 1;
-                    end if;
-                end if;
-
-                if do_wr = '1' and do_rd = '1' then
-                    level <= level;
-                elsif do_wr = '1' then
-                    level <= level + 1;
-                elsif do_rd = '1' then
-                    level <= level - 1;
-                end if;
-
             end if;
+
+            -- Read pointer advance (data itself is combinational)
+            if do_rd = '1' then
+                if rd_ptr = DEPTH - 1 then
+                    rd_ptr <= 0;
+                else
+                    rd_ptr <= rd_ptr + 1;
+                end if;
+            end if;
+
+            if do_wr = '1' and do_rd = '1' then
+                level <= level;
+            elsif do_wr = '1' then
+                level <= level + 1;
+            elsif do_rd = '1' then
+                level <= level - 1;
+            end if;
+
         end if;
     end process;
 

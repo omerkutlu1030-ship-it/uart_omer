@@ -22,7 +22,7 @@ catch {rename add_waves ""}
 # ---- Project paths ----
 set SRC_DIR  "/home/intern/uart_omer/rtl"
 set TB_DIR   "/home/intern/uart_omer/tb"
-set WORK     work
+set WORK     uart_lib
 set VHDL_STD "-2008"
 set TB_TOP   tb_uart_axi_lite_uvvm
 
@@ -64,7 +64,7 @@ proc cmp {} {
 
 proc simulate {} {
     global WORK TB_TOP
-    vsim -voptargs=+acc -t ps -lib $WORK $uart_lib.$TB_TOP
+    vsim -voptargs=+acc -t ps -lib $WORK $WORK.$TB_TOP
 }
 
 make_lib

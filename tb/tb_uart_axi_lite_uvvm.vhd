@@ -12,62 +12,29 @@ library uart_lib;
 use uart_lib.all;
 
 entity tb_uart_axi_lite_uvvm is
+
 end entity;
 
 architecture sim of tb_uart_axi_lite_uvvm is
 
   constant CLK_PERIOD : time := 10 ns;
 
-
-  -- All AXI-Lite signals bundled into the UVVM record type
+  -- All AXI-Lite signals bundled into the UVVM record type.
+  -- Initialised with init_axilite_if_signals so the BFM is the sole driver;
+  -- concurrent 'Z' assignments would create conflicting drivers in ModelSim.
   signal axilite_if : t_axilite_if(
     write_address_channel(awaddr(7 downto 0)),
     write_data_channel(wdata(31 downto 0), wstrb(3 downto 0)),
     read_address_channel(araddr(7 downto 0)),
     read_data_channel(rdata(31 downto 0))
-  );
+  ) := init_axilite_if_signals(8, 32);
 
   signal aclk    : std_logic := '0';
   signal aresetn : std_logic := '0';
   signal rx, tx  : std_logic := '1';
 
-  -- Intermediate signals bridging axilite_if <-> DUT ports
-  signal s_axi_awaddr  : std_logic_vector(7 downto 0) := (others => '0');
-  signal s_axi_awvalid : std_logic := '0';
-  signal s_axi_awready : std_logic := '0';
-  signal s_axi_wdata   : std_logic_vector(31 downto 0) := (others => '0');
-  signal s_axi_wstrb   : std_logic_vector(3 downto 0) := (others => '0');
-  signal s_axi_wvalid  : std_logic := '0';
-  signal s_axi_wready  : std_logic := '0';
-  signal s_axi_bready  : std_logic := '0';
-  signal s_axi_bresp   : std_logic_vector(1 downto 0) := (others => '0');
-  signal s_axi_bvalid  : std_logic := '0';
-  signal s_axi_araddr  : std_logic_vector(7 downto 0) := (others => '0');
-  signal s_axi_arvalid : std_logic := '0';
-  signal s_axi_arready : std_logic := '0';
-  signal s_axi_rready  : std_logic := '0';
-  signal s_axi_rdata   : std_logic_vector(31 downto 0) := (others => '0');
-  signal s_axi_rresp   : std_logic_vector(1 downto 0);
-  signal s_axi_rvalid  : std_logic := '0';
-
 begin
-s_axi_awaddr <= axilite_if.write_address_channel.awaddr(7 downto 0);
-s_axi_awvalid <= axilite_if.write_address_channel.awvalid;
-axilite_if.write_address_channel.awready <= s_axi_awready;
-s_axi_wdata <= axilite_if.write_data_channel.wdata(31 downto 0);
-s_axi_wstrb <= axilite_if.write_data_channel.wstrb(3 downto 0);
-s_axi_wvalid <= axilite_if.write_data_channel.wvalid;
-axilite_if.write_data_channel.wready <= s_axi_wready;
-s_axi_bready <= axilite_if.write_response_channel.bready;
-axilite_if.write_response_channel.bresp <= s_axi_bresp;
-axilite_if.write_response_channel.bvalid <= s_axi_bvalid;
-s_axi_araddr <= axilite_if.read_address_channel.araddr(7 downto 0);
-s_axi_arvalid <= axilite_if.read_address_channel.arvalid;
-axilite_if.read_address_channel.arready <= s_axi_arready;
-s_axi_rready <= axilite_if.read_data_channel.rready;
-axilite_if.read_data_channel.rdata <= s_axi_rdata(31 downto 0);
-axilite_if.read_data_channel.rresp <= s_axi_rresp;
-axilite_if.read_data_channel.rvalid <= s_axi_rvalid;
+
   -- ------------------------------------------------------------------
   -- DUT
   -- ------------------------------------------------------------------
@@ -76,27 +43,27 @@ axilite_if.read_data_channel.rvalid <= s_axi_rvalid;
       s_axi_aclk    => aclk,
       s_axi_aresetn => aresetn,
 
-      s_axi_awaddr  => s_axi_awaddr,
-      s_axi_awvalid => s_axi_awvalid,
-      s_axi_awready => s_axi_awready,
+      s_axi_awaddr  => axilite_if.write_address_channel.awaddr(7 downto 0),
+      s_axi_awvalid => axilite_if.write_address_channel.awvalid,
+      s_axi_awready => axilite_if.write_address_channel.awready,
 
-      s_axi_wdata   => s_axi_wdata,
-      s_axi_wstrb   => s_axi_wstrb,
-      s_axi_wvalid  => s_axi_wvalid,
-      s_axi_wready  => s_axi_wready,
+      s_axi_wdata   => axilite_if.write_data_channel.wdata(31 downto 0),
+      s_axi_wstrb   => axilite_if.write_data_channel.wstrb,
+      s_axi_wvalid  => axilite_if.write_data_channel.wvalid,
+      s_axi_wready  => axilite_if.write_data_channel.wready,
 
-      s_axi_bresp   => s_axi_bresp,
-      s_axi_bvalid  => s_axi_bvalid,
-      s_axi_bready  => s_axi_bready,
+      s_axi_bresp   => axilite_if.write_response_channel.bresp,
+      s_axi_bvalid  => axilite_if.write_response_channel.bvalid,
+      s_axi_bready  => axilite_if.write_response_channel.bready,
 
-      s_axi_araddr  => s_axi_araddr,
-      s_axi_arvalid => s_axi_arvalid,
-      s_axi_arready => s_axi_arready,
+      s_axi_araddr  => axilite_if.read_address_channel.araddr(7 downto 0),
+      s_axi_arvalid => axilite_if.read_address_channel.arvalid,
+      s_axi_arready => axilite_if.read_address_channel.arready,
 
-      s_axi_rdata   => s_axi_rdata,
-      s_axi_rresp   => s_axi_rresp,
-      s_axi_rvalid  => s_axi_rvalid,
-      s_axi_rready  => s_axi_rready,
+      s_axi_rdata   => axilite_if.read_data_channel.rdata(31 downto 0),
+      s_axi_rresp   => axilite_if.read_data_channel.rresp,
+      s_axi_rvalid  => axilite_if.read_data_channel.rvalid,
+      s_axi_rready  => axilite_if.read_data_channel.rready,
 
       rx => rx,
       tx => tx

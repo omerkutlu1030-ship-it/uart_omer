@@ -71,11 +71,11 @@ begin
 
     rx_gen : process(clk, rst_n)
     begin
-        if rising_edge(clk) then
-            if rst_n = '0' then
-                rx_counter <= 0;
-                rx_tick    <= '0';
-            elsif rx_enable = '0' then
+        if rst_n = '0' then
+            rx_counter <= 0;
+            rx_tick    <= '0';
+        elsif rising_edge(clk) then
+            if rx_enable = '0' then
                 rx_counter <= 0;
                 rx_tick    <= '0';
             elsif rx_counter >= max_count - 1 then
@@ -90,11 +90,11 @@ begin
 
     tx_gen : process(clk, rst_n)
     begin
-        if rising_edge(clk) then
-            if rst_n = '0' then
-                tx_counter <= 0;
-                tx_tick    <= '0';
-            elsif tx_enable = '0' then
+        if rst_n = '0' then
+            tx_counter <= 0;
+            tx_tick    <= '0';
+        elsif rising_edge(clk) then
+            if tx_enable = '0' then
                 tx_counter <= 0;
                 tx_tick    <= '0';
             elsif tx_counter >= max_count - 1 then
